@@ -35,7 +35,7 @@ body { background-color: var(--cinza); }
 # TÍTULO
 # ===========================
 st.markdown("<div class='big-title'>🔮 Previsão de Tarifas 2026</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Previsão baseada na média histórica (2023–2025) com ajuste de 1,1%</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Previsão baseada na média histórica (2023–2025)</div>", unsafe_allow_html=True)
 
 # ===========================
 # CARREGAR DATA
