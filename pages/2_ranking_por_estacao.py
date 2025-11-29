@@ -18,7 +18,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 :root {
-    --laranja: #FFFF9F68;
+    --laranja: #FF9F68;
     --roxo: #9B6DFF;
     --verde: #62D99C;
     --cinza: #F5F4FA;
@@ -89,11 +89,12 @@ if df_filtered.empty:
     st.stop()
 
 # ===========================
-# AGREGAR POR DESTINO
+# AGREGAR POR DESTINO (ARREDONDADO)
 # ===========================
 agg = (
     df_filtered.groupby("DESTINO", as_index=False)["TARIFA"]
     .mean()
+    .round(0)   # <<<<<<<< ARREDONDAMENTO AQUI
     .rename(columns={"TARIFA": "TARIFA_MEDIA_ESTACAO"})
 ).sort_values("TARIFA_MEDIA_ESTACAO", ascending=True)
 
@@ -126,7 +127,7 @@ fig_top5 = px.bar(
     color_discrete_sequence=[cores["top"]]
 )
 
-fig_top5.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
+fig_top5.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")   # <<<<< INTEIRO
 fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30))
 
 st.plotly_chart(fig_top5, use_container_width=True)
@@ -145,25 +146,26 @@ fig_evitar = px.bar(
     color_discrete_sequence=[cores["bad"]]
 )
 
-fig_evitar.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
+fig_evitar.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")   # <<<<< INTEIRO
 fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30))
 
 st.plotly_chart(fig_evitar, use_container_width=True)
 
 # ===========================
-# INSIGHTS ABAIXO
+# INSIGHTS (ABAIXO DOS GRÁFICOS)
 # ===========================
 st.markdown("### 🧠 Insights rápidos")
 
 melhor = top5.iloc[0]
 mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
+
 pct_gap = ((mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana) * 100 if mediana != 0 else np.nan
 
 st.markdown(f"""
 <div class='card'>
     <b>Melhor destino:</b> {melhor['DESTINO']}<br>
-    <b>Tarifa média:</b> R$ {melhor['TARIFA_MEDIA_ESTACAO']:.2f}<br><br>
-    <b>Mediana da estação:</b> R$ {mediana:.2f}<br>
+    <b>Tarifa média:</b> R$ {melhor['TARIFA_MEDIA_ESTACAO']:.0f}<br><br>
+    <b>Mediana da estação:</b> R$ {mediana:.0f}<br>
     <b>Vantagem vs mediana:</b> {pct_gap:.1f}% mais barato
 </div>
 """, unsafe_allow_html=True)
@@ -173,8 +175,8 @@ st.markdown(f"""
 # ===========================
 st.markdown("### 💬 Recomendações")
 st.markdown(
-    "- O Top 5 destaca os destinos com melhor custo-benefício na estação.<br>"
-    "- Os destinos mais caros tendem a ter maior demanda sazonal.<br>"
-    "- Usar o gap em relação à mediana ajuda a identificar oportunidades reais.",
+    "- O Top 5 mostra os destinos com **melhor custo-benefício** na estação.<br>"
+    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>"
+    "- A vantagem percentual mostra o quanto realmente vale a pena mudar o destino.",
     unsafe_allow_html=True
 )
