@@ -21,7 +21,17 @@ div[data-testid="stSidebarNav"] {display: none !important;}
 # =========================================
 # MENU CUSTOMIZADO (APARECE EM TODAS AS PÁGINAS)
 # =========================================
-st.sidebar.title("✌️ Bora Alí – Navegação")
+st.sidebar.markdown("""
+<style>
+.sidebar-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #9B59B6; /* lavanda */
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("<div class='sidebar-title'>✌️ Bora Alí – Navegação</div>", unsafe_allow_html=True)
 
 st.sidebar.page_link("app.py", label="🏠 Início")
 st.sidebar.page_link("pages/1_historico_por_rota.py", label="📍 Histórico por Rota")
@@ -31,17 +41,18 @@ st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x 
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
 
 # =========================================
-# CSS - FUNDO AQUARELA + ESTILO
+# CSS - AQUARELA LAVANDA + LARANJA + LILÁS
 # =========================================
+
 st.markdown("""
 <style>
 
 body {
     background: linear-gradient(
       135deg,
-      rgba(255,138,71,0.25),
-      rgba(126,200,126,0.25),
-      rgba(193,141,240,0.25)
+      rgba(155,89,182,0.25),   /* Lavanda */
+      rgba(255,138,71,0.25),   /* Laranja */
+      rgba(193,141,240,0.25)   /* Lilás */
     );
     background-size: 400% 400%;
     animation: gradientFlow 18s ease infinite;
@@ -53,14 +64,45 @@ body {
     100% {background-position: 0% 50%;}
 }
 
+/* Título Principal */
 .big-title {
     font-size: 48px !important;
     font-weight: 800 !important;
-    color: #3C1A66 !important;
+    color: #9B59B6 !important; /* Lavanda */
 }
+
+/* Subtítulo */
 .subtitle {
-    font-size: 20px !important;
-    color: #3C1A66 !important;
+    font-size: 22px !important;
+    color: #FF8A47 !important; /* Laranja */
+}
+
+/* Cards padrão */
+.card {
+    background: rgba(255,255,255,0.75);
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 20px;
+    border: 2px solid rgba(0,0,0,0.05);
+    backdrop-filter: blur(6px);
+}
+
+/* Card Lavanda */
+.card-lavanda {
+    background: rgba(155,89,182,0.15);
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 20px;
+    border: 2px solid rgba(155,89,182,0.3);
+}
+
+/* Card Laranja */
+.card-laranja {
+    background: rgba(255,138,71,0.15);
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 20px;
+    border: 2px solid rgba(255,138,71,0.3);
 }
 
 </style>
@@ -69,10 +111,16 @@ body {
 # =========================================
 # CABEÇALHO
 # =========================================
-st.markdown("<h1 class='big-title'>✌️Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='big-title'>✌️ Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Dashboard nacional com previsões, históricos e insights do viajante brasileiro.</p>", unsafe_allow_html=True)
 
 # =========================================
-# TELA INICIAL
+# TELA INICIAL COM CARDS LAVANDA E LARANJA
 # =========================================
-st.write("👈 Use o menu à esquerda para navegar entre as páginas.")
+st.markdown("<div class='card-lavanda'>", unsafe_allow_html=True)
+st.write("💜 **Bem-vindo ao novo painel Bora Alí!** Aqui você pode navegar entre previsões, históricos, rankings e análises completas.")
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("<div class='card-laranja'>", unsafe_allow_html=True)
+st.write("👈 Use o menu à esquerda para acessar cada módulo.")
+st.markdown("</div>", unsafe_allow_html=True)
