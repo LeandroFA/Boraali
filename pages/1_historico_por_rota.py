@@ -1,6 +1,16 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
+
+# remover menu nativo sempre
+st.markdown("""
+<style>
+div[data-testid="stSidebarNav"] {display: none !important;}
+</style>
+""", unsafe_allow_html=True)
+
 
 # ===========================
 # CONFIG GERAL
