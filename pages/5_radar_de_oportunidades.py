@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np
 
 # ==============================================
 # CONFIG
@@ -12,7 +11,7 @@ st.set_page_config(
 )
 
 # ==============================================
-# ESTILO
+# ESTILO (cores Bora Alí)
 # ==============================================
 st.markdown("""
 <style>
@@ -33,7 +32,7 @@ body { background-color: var(--cinza); }
 # TÍTULO
 # ==============================================
 st.markdown("<div class='big-title'>🗺️ Radar de Oportunidades</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Mapa real do Brasil com custo-benefício por destino</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Encontre os destinos mais vantajosos para viajar a partir da sua origem</div>", unsafe_allow_html=True)
 
 # ==============================================
 # CARREGAR DATA
@@ -43,7 +42,17 @@ df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
 
 # ==============================================
-# COORDENADAS DAS CAPITAIS
+# MÊS POR EXTENSO
+# ==============================================
+MESES = {
+    1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril",
+    5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto",
+    9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+}
+MESES_INV = {v: k for k, v in MESES.items()}
+
+# ==============================================
+# COORDENADAS DAS CAPITAIS DO BRASIL
 # ==============================================
 CAPITAIS_COORDS = {
     "Rio Branco": {"lat": -9.97499, "lon": -67.8243},
@@ -84,12 +93,13 @@ with col1:
     origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
 
 with col2:
-    mes = st.selectbox("Mês:", list(range(1,13)))
+    mes_nome = st.selectbox("Mês:", list(MESES.values()))
+    mes = MESES_INV[mes_nome]
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["MES"] == mes)]
 
 # ==============================================
-# AGRUPAR POR DESTINO
+# AGRUPAMENTO POR DESTINO
 # ==============================================
 agg = (
     df_filtro.groupby("DESTINO", as_index=False)["TARIFA"]
@@ -98,19 +108,21 @@ agg = (
     .rename(columns={"TARIFA": "TARIFA_MEDIA"})
 )
 
-# Adicionar as coordenadas
+# adicionar coordenadas
 agg["lat"] = agg["DESTINO"].apply(lambda x: CAPITAIS_COORDS[x]["lat"])
 agg["lon"] = agg["DESTINO"].apply(lambda x: CAPITAIS_COORDS[x]["lon"])
 
 # ==============================================
-# CLASSIFICAÇÃO DE CUSTO
+# CLASSIFICAÇÃO: BARATO / MÉDIO / CARO
 # ==============================================
 p20 = agg["TARIFA_MEDIA"].quantile(0.33)
 p80 = agg["TARIFA_MEDIA"].quantile(0.66)
 
-def categoria(x):
-    if x <= p20: return "Barato"
-    elif x <= p80: return "Médio"
+def categoria(v):
+    if v <= p20:
+        return "Barato"
+    elif v <= p80:
+        return "Médio"
     return "Caro"
 
 agg["CATEGORIA"] = agg["TARIFA_MEDIA"].apply(categoria)
@@ -122,7 +134,7 @@ cores = {
 }
 
 # ==============================================
-# MAPA DO BRASIL
+# MAPA FINAL
 # ==============================================
 st.markdown("### 🗺️ Mapa de Oportunidades")
 
@@ -144,7 +156,7 @@ fig.update_layout(mapbox_style="open-street-map")
 st.plotly_chart(fig, use_container_width=True)
 
 # ==============================================
-# INSIGHTS
+# INSIGHTS AUTOMÁTICOS
 # ==============================================
 melhor = agg.loc[agg["TARIFA_MEDIA"].idxmin()]
 pior = agg.loc[agg["TARIFA_MEDIA"].idxmax()]
@@ -154,8 +166,6 @@ st.markdown(f"""
 <div class='card'>
 <b>• Destino mais barato:</b> {melhor['DESTINO']} — R$ {melhor['TARIFA_MEDIA']:.0f}<br><br>
 <b>• Destino mais caro:</b> {pior['DESTINO']} — R$ {pior['TARIFA_MEDIA']:.0f}<br><br>
-<b>• Diferença entre eles:</b> {pior['TARIFA_MEDIA'] - melhor['TARIFA_MEDIA']} reais<br>
+<b>• Diferença entre eles:</b> R$ {pior['TARIFA_MEDIA'] - melhor['TARIFA_MEDIA']:.0f}<br>
 </div>
 """, unsafe_allow_html=True)
-
-
