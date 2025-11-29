@@ -1,17 +1,17 @@
 import streamlit as st
 
-# =========================================
-# CONFIGURAÇÃO DO APP
-# =========================================
+# ==========================
+# CONFIG DO APLICATIVO
+# ==========================
 st.set_page_config(
     page_title="Bora Alí – Dashboard",
     page_icon="✌️",
     layout="wide"
 )
 
-# =========================================
+# ==========================
 # CSS - FUNDO AQUARELA + REMOVER MENU PADRÃO
-# =========================================
+# ==========================
 st.markdown("""
 <style>
 
@@ -49,46 +49,38 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================
+
+# ==========================
 # CABEÇALHO
-# =========================================
+# ==========================
 st.markdown("<h1 class='big-title'>🎨 Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Dashboard nacional com previsões, históricos e insights do viajante brasileiro.</p>", unsafe_allow_html=True)
 
 
-# =========================================
-# MENU LATERAL
-# =========================================
+# ==========================
+# MENU LATERAL PROFISSIONAL (st.page_link)
+# ==========================
 st.sidebar.title("✌️ Navegação Bora Alí")
 
-opcao = st.sidebar.radio(
-    "Escolha uma seção:",
-    [
-        "📍 Histórico por Rota",
-        "🏆 Ranking por Estação",
-        "📈 Previsão 2026",
-        "💸 Mês Ideal x Orçamento",
-        "🎯 Radar de Oportunidades"
-    ]
-)
+st.sidebar.page_link("app.py", label="🏠 Início")
 
-mapa_paginas = {
-    "📍 Histórico por Rota": "historico_por_rota",
-    "🏆 Ranking por Estação": "ranking_por_estacao",
-    "📈 Previsão 2026": "previsao_2026",
-    "💸 Mês Ideal x Orçamento": "mes_ideal_orcamento",
-    "🎯 Radar de Oportunidades": "radar_de_oportunidades",
-}
+st.sidebar.page_link("pages/historico_por_rota.py",
+                     label="📍 Histórico por Rota")
 
-# =========================================
-# CONTROLE DE NAVEGAÇÃO
-# =========================================
-query_params = st.experimental_get_query_params()
+st.sidebar.page_link("pages/ranking_por_estacao.py",
+                     label="🏆 Ranking por Estação")
 
-# se o usuário acabou de escolher, mudar URL + recarregar
-if opcao:
-    st.experimental_set_query_params(page=mapa_paginas[opcao])
-    if "page" not in query_params or query_params.get("page")[0] != mapa_paginas[opcao]:
-        st.experimental_rerun()
+st.sidebar.page_link("pages/previsao_2026.py",
+                     label="📈 Previsão 2026")
 
-st.write("👈 Use o menu à esquerda para navegar.")
+st.sidebar.page_link("pages/mes_ideal_orcamento.py",
+                     label="💸 Mês Ideal x Orçamento")
+
+st.sidebar.page_link("pages/radar_de_oportunidades.py",
+                     label="🎯 Radar de Oportunidades")
+
+
+# ==========================
+# TELA INICIAL
+# ==========================
+st.write("👈 Use o menu à esquerda para navegar entre as páginas.")
