@@ -18,7 +18,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 :root {
-    --laranja: #FF9F68;
+    --laranja: #FFFF9F68;
     --roxo: #9B6DFF;
     --verde: #62D99C;
     --cinza: #F5F4FA;
@@ -56,9 +56,9 @@ estacoes = {
 }
 
 # ===========================
-# FILTROS (origem opcional, estação, anos)
+# FILTROS
 # ===========================
-col1, col2, col3 = st.columns([1,1,1])
+col1, col2, col3 = st.columns(3)
 
 with col1:
     origem_choices = ["Todas"] + sorted(df["ORIGEM"].unique().tolist())
@@ -85,7 +85,7 @@ if origem_sel != "Todas":
     df_filtered = df_filtered[df_filtered["ORIGEM"] == origem_sel]
 
 if df_filtered.empty:
-    st.warning("Nenhum dado disponível para essa combinação. Tente outra origem/estação/ano.")
+    st.warning("Nenhum dado disponível para essa combinação.")
     st.stop()
 
 # ===========================
@@ -100,11 +100,11 @@ agg = (
 # ===========================
 # TOP 5 + TOP 3 A EVITAR
 # ===========================
-top5 = agg.head(5).copy()
-evitar3 = agg.tail(3).sort_values("TARIFA_MEDIA_ESTACAO", ascending=False).copy()
+top5 = agg.head(5)
+evitar3 = agg.tail(3).sort_values("TARIFA_MEDIA_ESTACAO", ascending=False)
 
 # ===========================
-# CORES BORA ALÍ
+# CORES
 # ===========================
 cores = {
     "top": "#62D99C",      # verde
@@ -114,21 +114,28 @@ cores = {
 # ===========================
 # GRÁFICO TOP 5
 # ===========================
+st.markdown(f"## 📊 Resultados — Estação **{estacao_sel}**")
+st.markdown("### 🟢 Top 5 destinos mais baratos")
+
 fig_top5 = px.bar(
     top5,
     x="TARIFA_MEDIA_ESTACAO",
     y="DESTINO",
     orientation="h",
     text="TARIFA_MEDIA_ESTACAO",
-    labels={"TARIFA_MEDIA_ESTACAO": "Tarifa média (R$)", "DESTINO": "Destino"},
     color_discrete_sequence=[cores["top"]]
 )
+
 fig_top5.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
 fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30))
 
+st.plotly_chart(fig_top5, use_container_width=True)
+
 # ===========================
-# GRÁFICO TOP 3 PARA EVITAR
+# GRÁFICO EVITAR 3
 # ===========================
+st.markdown("### 🔴 3 destinos mais caros (evite)")
+
 fig_evitar = px.bar(
     evitar3,
     x="TARIFA_MEDIA_ESTACAO",
@@ -137,43 +144,37 @@ fig_evitar = px.bar(
     text="TARIFA_MEDIA_ESTACAO",
     color_discrete_sequence=[cores["bad"]]
 )
+
 fig_evitar.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
 fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30))
 
+st.plotly_chart(fig_evitar, use_container_width=True)
+
 # ===========================
-# LAYOUT
+# INSIGHTS ABAIXO
 # ===========================
-st.markdown(f"### 📊 Resultados — Estação: **{estacao_sel}** ")
+st.markdown("### 🧠 Insights rápidos")
 
-left, right = st.columns([2,1])
+melhor = top5.iloc[0]
+mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
+pct_gap = ((mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana) * 100 if mediana != 0 else np.nan
 
-with left:
-    st.markdown("### 🟢 Top 5 destinos mais baratos")
-    st.plotly_chart(fig_top5, use_container_width=True)
+st.markdown(f"""
+<div class='card'>
+    <b>Melhor destino:</b> {melhor['DESTINO']}<br>
+    <b>Tarifa média:</b> R$ {melhor['TARIFA_MEDIA_ESTACAO']:.2f}<br><br>
+    <b>Mediana da estação:</b> R$ {mediana:.2f}<br>
+    <b>Vantagem vs mediana:</b> {pct_gap:.1f}% mais barato
+</div>
+""", unsafe_allow_html=True)
 
-    st.markdown("### 🔴 3 destinos mais caros (evite)")
-    st.plotly_chart(fig_evitar, use_container_width=True)
-
-with right:
-    st.markdown("### 🧠 Insights rápidos")
-
-    melhor = top5.iloc[0]
-    mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
-    pct_gap = ((mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana) * 100 if mediana != 0 else np.nan
-
-    st.markdown(f"""
-    <div class='card'>
-        <b>Melhor destino:</b> {melhor['DESTINO']}<br>
-        <b>Tarifa média:</b> R$ {melhor['TARIFA_MEDIA_ESTACAO']:.2f}<br><br>
-        <b>Mediana da estação:</b> R$ {mediana:.2f}<br>
-        <b>Vantagem vs mediana:</b> {pct_gap:.1f}% mais barato
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("### 💬 Recomendações")
-    st.markdown(
-        "- O top 5 representa o melhor custo-benefício médio na estação.<br>"
-        "- Os destinos do bloco vermelho sofrem forte variação ou são alta demanda.<br>"
-        "- Use para identificar oportunidades sazonais claras.",
-        unsafe_allow_html=True
-    )
+# ===========================
+# RECOMENDAÇÕES
+# ===========================
+st.markdown("### 💬 Recomendações")
+st.markdown(
+    "- O Top 5 destaca os destinos com melhor custo-benefício na estação.<br>"
+    "- Os destinos mais caros tendem a ter maior demanda sazonal.<br>"
+    "- Usar o gap em relação à mediana ajuda a identificar oportunidades reais.",
+    unsafe_allow_html=True
+)
