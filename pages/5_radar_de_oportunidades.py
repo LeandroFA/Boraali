@@ -90,7 +90,12 @@ CAPITAIS_COORDS = {
 col1, col2 = st.columns(2)
 
 with col1:
-    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
+    origens = sorted(df["ORIGEM"].unique())
+    origem = st.selectbox("Origem:", ["Selecione a origem"] + origens)
+
+    if origem == "Selecione a origem":
+        st.warning("Por favor, selecione uma origem para visualizar o mapa.")
+        st.stop()
 
 with col2:
     mes_nome = st.selectbox("Mês:", list(MESES.values()))
