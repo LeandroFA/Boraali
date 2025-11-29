@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ===========================
-# ESTILO BORA ALÍ
+# ESTILO VISUAL — BORA ALÍ
 # ===========================
 st.markdown("""
 <style>
@@ -61,7 +61,7 @@ body {
 # TÍTULO
 # ===========================
 st.markdown("<div class='big-title'>📍 Histórico por Rota</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Acompanhe o comportamento dos preços da rota escolhida ao longo do tempo</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Visualize o comportamento da rota ao longo do tempo</div>", unsafe_allow_html=True)
 
 # ===========================
 # CARREGAR DATA
@@ -88,30 +88,50 @@ df["MES_NOME"] = df["MES"].map(meses)
 col1, col2 = st.columns(2)
 
 with col1:
-    origem = st.selectbox("Selecione a origem:", sorted(df["ORIGEM"].unique()))
+    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
 
 with col2:
-    destino = st.selectbox("Selecione o destino:", sorted(df["DESTINO"].unique()))
+    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino)]
 
 if df_filtro.empty:
-    st.warning("⚠️ Não há dados para essa rota. Tente outra combinação.")
+    st.warning("⚠️ Não há dados para esta rota. Tente outra combinação.")
     st.stop()
+
+# ===========================
+# AGRUPAR DADOS (SOLUÇÃO DO PROBLEMA)
+# ===========================
+# Aqui garantimos que exista APENAS 1 valor por mês por ano
+df_grouped = (
+    df_filtro.groupby(["ANO", "MES", "MES_NOME"])["TARIFA"]
+    .mean()
+    .reset_index()
+)
 
 # ===========================
 # MÉTRICAS PRINCIPAIS
 # ===========================
-media_geral = df_filtro["TARIFA"].mean()
-melhor_mes = df_filtro.groupby("MES")["TARIFA"].mean().idxmin()
-melhor_valor = df_filtro.groupby("MES")["TARIFA"].mean().min()
+media_geral = df_grouped["TARIFA"].mean()
+
+melhor_mes = (
+    df_grouped.groupby("MES")["TARIFA"]
+    .mean()
+    .idxmin()
+)
+
+melhor_valor = (
+    df_grouped.groupby("MES")["TARIFA"]
+    .mean()
+    .min()
+)
 
 colA, colB = st.columns(2)
 
 with colA:
     st.markdown(f"""
     <div class='card'>
-        <b>🎯 Tarifa média da rota (2023–2025):</b><br>
+        <b>🎯 Tarifa média (2023–2025):</b><br>
         <span class='metric-value'>R$ {media_geral:,.2f}</span>
     </div>
     """, unsafe_allow_html=True)
@@ -125,12 +145,12 @@ with colB:
     """, unsafe_allow_html=True)
 
 # ===========================
-# GRÁFICO MELHORADO — LINHA
+# GRÁFICO DE LINHA AGRUPADO (SEM DUPLICAÇÕES)
 # ===========================
-st.markdown("### 📈 Evolução Mensal da Tarifa (por ano)")
+st.markdown("### 📈 Evolução Mensal da Tarifa (média por mês)")
 
 fig = px.line(
-    df_filtro,
+    df_grouped,
     x="MES_NOME",
     y="TARIFA",
     color="ANO",
@@ -143,10 +163,9 @@ fig.update_traces(marker=dict(size=10, opacity=0.9))
 fig.update_layout(
     height=450,
     xaxis_title="Mês",
-    yaxis_title="Tarifa (R$)",
+    yaxis_title="Tarifa Média (R$)",
     plot_bgcolor="#F5F4FA",
     paper_bgcolor="#F5F4FA",
-    font=dict(size=14),
     xaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.07)"),
     yaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.07)")
 )
@@ -154,11 +173,15 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # ===========================
-# GRÁFICO MÉDIA ANUAL
+# GRÁFICO ANUAL
 # ===========================
 st.markdown("### 📊 Média Anual da Tarifa")
 
-df_ano = df_filtro.groupby("ANO")["TARIFA"].mean().reset_index()
+df_ano = (
+    df_grouped.groupby("ANO")["TARIFA"]
+    .mean()
+    .reset_index()
+)
 
 fig2 = px.bar(
     df_ano,
@@ -168,28 +191,22 @@ fig2 = px.bar(
     color_discrete_sequence=["#9B6DFF", "#FF9F68", "#62D99C"]
 )
 
-fig2.update_layout(
-    height=400,
-    xaxis_title="Ano",
-    yaxis_title="Tarifa Média (R$)",
-    plot_bgcolor="#FFFFFF",
-)
-
+fig2.update_layout(height=400, xaxis_title="Ano", yaxis_title="Tarifa Média (R$)")
 st.plotly_chart(fig2, use_container_width=True)
 
 # ===========================
 # INSIGHTS
 # ===========================
-st.markdown("### 🧠 Insights sobre a rota")
+st.markdown("### 🧠 Insights da Rota")
 
 insight = ""
 
 if df_ano["TARIFA"].iloc[-1] < df_ano["TARIFA"].iloc[0]:
-    insight += "• Os preços da rota estão diminuindo ao longo dos anos.<br>"
+    insight += "• A rota está ficando mais barata ao longo dos anos.<br>"
 else:
-    insight += "• Os preços da rota estão aumentando ano a ano.<br>"
+    insight += "• A rota está ficando mais cara ao longo dos anos.<br>"
 
-insight += f"• O mês mais vantajoso historicamente é <b>{meses[melhor_mes]}</b> com tarifa média de <b>R$ {melhor_valor:,.2f}</b>.<br>"
-insight += "• Meses de baixa estação tendem a oferecer melhores preços."
+insight += f"• O mês historicamente mais vantajoso é <b>{meses[melhor_mes]}</b>.<br>"
+insight += "• Meses de baixa estação geralmente oferecem preços melhores."
 
 st.markdown(f"<div class='card'>{insight}</div>", unsafe_allow_html=True)
