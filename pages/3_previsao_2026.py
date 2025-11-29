@@ -2,6 +2,25 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
+
+# === REMOVER MENU NATIVO ===
+st.markdown("""
+<style>
+div[data-testid="stSidebarNav"] {display: none !important;}
+</style>
+""", unsafe_allow_html=True)
+
+# === MENU CUSTOMIZADO (FUNCIONA EM TODAS AS PÁGINAS) ===
+st.sidebar.title("✌️ Bora Alí – Navegação")
+
+st.sidebar.page_link("app.py", label="🏠 Início")
+st.sidebar.page_link("pages/1_historico_por_rota.py", label="📍 Histórico por Rota")
+st.sidebar.page_link("pages/2_ranking_por_estacao.py", label="🏆 Ranking por Estação")
+st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
+st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
+st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
+
 
 # ===========================
 # CONFIGURAÇÃO
