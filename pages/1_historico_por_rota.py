@@ -184,4 +184,12 @@ st.markdown("### 🧠 Insights sobre a rota")
 
 insight = ""
 
-if df_ano_
+if df_ano["TARIFA"].iloc[-1] < df_ano["TARIFA"].iloc[0]:
+    insight += "• Os preços da rota estão diminuindo ao longo dos anos.<br>"
+else:
+    insight += "• Os preços da rota estão aumentando ano a ano.<br>"
+
+insight += f"• O mês mais vantajoso historicamente é <b>{meses[melhor_mes]}</b> com tarifa média de <b>R$ {melhor_valor:,.2f}</b>.<br>"
+insight += "• Meses de baixa estação tendem a oferecer melhores preços."
+
+st.markdown(f"<div class='card'>{insight}</div>", unsafe_allow_html=True)
