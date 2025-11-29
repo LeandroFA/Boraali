@@ -10,40 +10,53 @@ st.set_page_config(
 )
 
 # =========================================
-# REMOVER MENU NATIVO DO STREAMLIT
-# =========================================
-st.markdown("""
-<style>
-div[data-testid="stSidebarNav"] { display: none !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# =========================================
-# 🎨 CSS – TEMA PREMIUM LAVANDA + LARANJA
+# CSS — REMOVER ESPAÇOS & TEMA PREMIUM
 # =========================================
 st.markdown("""
 <style>
 
-html, body, [class*="css"]  {
+html, body, [class*="css"] {
     font-family: "Inter", sans-serif !important;
 }
 
-/* Fundo suave aquarela */
+/* Remove o cabeçalho invisível do Streamlit */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* Remove TODO o espaço acima do conteúdo */
+section.main > div {
+    padding-top: 0 !important;
+    margin-top: -55px !important;
+}
+
+/* Remove padding interno invisível */
+.block-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Remove o menu nativo */
+div[data-testid="stSidebarNav"] {
+    display: none !important;
+}
+
+/* Fundo aquarela lavanda + laranja + lilás */
 body {
     background: linear-gradient(
-      135deg,
-      rgba(155,89,182,0.16),
-      rgba(255,138,71,0.16),
-      rgba(193,141,240,0.16)
+        135deg,
+        rgba(155,89,182,0.16),
+        rgba(255,138,71,0.16),
+        rgba(193,141,240,0.16)
     );
     background-size: 400% 400%;
     animation: bgMove 26s ease infinite;
 }
 
 @keyframes bgMove {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* Título principal */
@@ -52,25 +65,15 @@ body {
     font-weight: 850 !important;
     color: #9B59B6 !important; /* Lavanda */
     letter-spacing: -1px;
-    margin-bottom: -8px;
+    margin-bottom: -4px;
 }
 
 /* Subtítulo */
 .subtitle {
     font-size: 22px !important;
-    color: #FF8A47 !important; /* Laranja */
     font-weight: 500;
-    margin-top: -10px;
-}
-
-/* Cards premium */
-.card {
-    background: rgba(255,255,255,0.75);
-    border-radius: 24px;
-    padding: 32px;
-    border: 1.5px solid rgba(0,0,0,0.05);
-    backdrop-filter: blur(6px);
-    margin-top: 10px;
+    color: #FF8A47 !important; /* Laranja */
+    margin-top: -8px;
 }
 
 /* Card lavanda */
@@ -79,7 +82,7 @@ body {
     border: 1.5px solid rgba(155,89,182,0.3);
     border-radius: 22px;
     padding: 28px;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 /* Card laranja */
@@ -88,18 +91,10 @@ body {
     border: 1.5px solid rgba(255,138,71,0.25);
     border-radius: 22px;
     padding: 28px;
-    margin-top: 14px;
+    margin-top: 12px;
 }
 
-/* Remover espaço grande no topo */
-section.main > div {
-    padding-top: 0 !important;
-}
-.block-container {
-    padding-top: 0 !important;
-}
-
-/* Sidebar elegante */
+/* Sidebar */
 .sidebar-title {
     font-size: 26px;
     font-weight: 800;
@@ -112,7 +107,7 @@ section.main > div {
 """, unsafe_allow_html=True)
 
 # =========================================
-# MENU CUSTOMIZADO (APARECE EM TODAS AS PÁGINAS)
+# MENU CUSTOMIZADO
 # =========================================
 st.sidebar.markdown("<div class='sidebar-title'>✌️ Bora Alí</div>", unsafe_allow_html=True)
 
@@ -124,13 +119,13 @@ st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x 
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
 
 # =========================================
-# CABEÇALHO PRINCIPAL
+# CABEÇALHO
 # =========================================
-st.markdown("<h1 class='big-title'>Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='big-title'>✌️Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Insights estratégicos para o viajante brasileiro.</p>", unsafe_allow_html=True)
 
 # =========================================
-# SEÇÕES DE BOAS-VINDAS
+# CARDS DE BOAS-VINDAS
 # =========================================
 st.markdown("<div class='card-lavanda'>", unsafe_allow_html=True)
 st.write("💜 **Bem-vindo ao novo painel Bora Alí!** Explore previsões, históricos, rankings e inteligência de viagem.")
