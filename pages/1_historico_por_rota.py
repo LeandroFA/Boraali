@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # ===========================
-# CONFIGURAÇÃO
+# CONFIG GERAL
 # ===========================
 st.set_page_config(
     page_title="Histórico por Rota — Bora Alí",
@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ===========================
-# ESTILO VISUAL — BORA ALÍ
+# ESTILO BORA ALÍ
 # ===========================
 st.markdown("""
 <style>
@@ -57,11 +57,13 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
+
 # ===========================
 # TÍTULO
 # ===========================
 st.markdown("<div class='big-title'>📍 Histórico por Rota</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Visualize o comportamento da rota ao longo do tempo</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Visualize o comportamento da tarifa ao longo dos anos</div>", unsafe_allow_html=True)
+
 
 # ===========================
 # CARREGAR DATA
@@ -71,8 +73,9 @@ df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
 
+
 # ===========================
-# MAPEAMENTO DE MESES
+# NOMES DOS MESES
 # ===========================
 meses = {
     1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril",
@@ -82,8 +85,9 @@ meses = {
 
 df["MES_NOME"] = df["MES"].map(meses)
 
+
 # ===========================
-# FILTROS
+# FILTROS DE ROTA
 # ===========================
 col1, col2 = st.columns(2)
 
@@ -96,21 +100,22 @@ with col2:
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino)]
 
 if df_filtro.empty:
-    st.warning("⚠️ Não há dados para esta rota. Tente outra combinação.")
+    st.warning("⚠️ Não há dados para essa rota.")
     st.stop()
 
+
 # ===========================
-# AGRUPAR DADOS (SOLUÇÃO DO PROBLEMA)
+# AGRUPAR PARA NÃO TER MESES DUPLICADOS
 # ===========================
-# Aqui garantimos que exista APENAS 1 valor por mês por ano
 df_grouped = (
     df_filtro.groupby(["ANO", "MES", "MES_NOME"])["TARIFA"]
     .mean()
     .reset_index()
 )
 
+
 # ===========================
-# MÉTRICAS PRINCIPAIS
+# CÁLCULO DE MÉTRICAS
 # ===========================
 media_geral = df_grouped["TARIFA"].mean()
 
@@ -126,12 +131,16 @@ melhor_valor = (
     .min()
 )
 
+
+# ===========================
+# CARDS
+# ===========================
 colA, colB = st.columns(2)
 
 with colA:
     st.markdown(f"""
     <div class='card'>
-        <b>🎯 Tarifa média (2023–2025):</b><br>
+        <b>🎯 Tarifa média geral:</b><br>
         <span class='metric-value'>R$ {media_geral:,.2f}</span>
     </div>
     """, unsafe_allow_html=True)
@@ -144,10 +153,14 @@ with colB:
     </div>
     """, unsafe_allow_html=True)
 
+
 # ===========================
-# GRÁFICO DE LINHA AGRUPADO (SEM DUPLICAÇÕES)
+# GRÁFICO DE LINHA — MESES ORDENADOS
 # ===========================
-st.markdown("### 📈 Evolução Mensal da Tarifa (média por mês)")
+st.markdown("### 📈 Evolução Mensal da Tarifa (por Ano)")
+
+ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
 fig = px.line(
     df_grouped,
@@ -156,24 +169,24 @@ fig = px.line(
     color="ANO",
     markers=True,
     line_shape="spline",
+    category_orders={"MES_NOME": ordem_meses},
     color_discrete_sequence=["#9B6DFF", "#FF9F68", "#62D99C"]
 )
 
-fig.update_traces(marker=dict(size=10, opacity=0.9))
+fig.update_traces(marker=dict(size=10))
 fig.update_layout(
-    height=450,
+    height=440,
     xaxis_title="Mês",
     yaxis_title="Tarifa Média (R$)",
     plot_bgcolor="#F5F4FA",
-    paper_bgcolor="#F5F4FA",
-    xaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.07)"),
-    yaxis=dict(showgrid=True, gridcolor="rgba(0,0,0,0.07)")
+    paper_bgcolor="#F5F4FA"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
+
 # ===========================
-# GRÁFICO ANUAL
+# GRÁFICO ANUAL — SEM 2023.5
 # ===========================
 st.markdown("### 📊 Média Anual da Tarifa")
 
@@ -183,30 +196,42 @@ df_ano = (
     .reset_index()
 )
 
+df_ano["ANO"] = df_ano["ANO"].astype(str)   # 👈 Remove o problema 2023.5
+
 fig2 = px.bar(
     df_ano,
     x="ANO",
     y="TARIFA",
+    text_auto=".2f",
     color="ANO",
     color_discrete_sequence=["#9B6DFF", "#FF9F68", "#62D99C"]
 )
 
-fig2.update_layout(height=400, xaxis_title="Ano", yaxis_title="Tarifa Média (R$)")
+fig2.update_layout(
+    height=400,
+    xaxis_type="category",
+    xaxis_title="Ano",
+    yaxis_title="Tarifa Média (R$)"
+)
+
 st.plotly_chart(fig2, use_container_width=True)
 
+
 # ===========================
-# INSIGHTS
+# INSIGHTS AUTOMÁTICOS
 # ===========================
 st.markdown("### 🧠 Insights da Rota")
 
-insight = ""
+trend = df_ano["TARIFA"].astype(float)
 
-if df_ano["TARIFA"].iloc[-1] < df_ano["TARIFA"].iloc[0]:
-    insight += "• A rota está ficando mais barata ao longo dos anos.<br>"
+insights = ""
+
+if trend.iloc[-1] < trend.iloc[0]:
+    insights += "• A rota está ficando **mais barata** ao longo dos anos.<br>"
 else:
-    insight += "• A rota está ficando mais cara ao longo dos anos.<br>"
+    insights += "• A rota está ficando **mais cara** ao longo dos anos.<br>"
 
-insight += f"• O mês historicamente mais vantajoso é <b>{meses[melhor_mes]}</b>.<br>"
-insight += "• Meses de baixa estação geralmente oferecem preços melhores."
+insights += f"• O mês historicamente mais vantajoso é <b>{meses[melhor_mes]}</b>.<br>"
+insights += "• Meses de baixa estação geralmente apresentam tarifas menores."
 
-st.markdown(f"<div class='card'>{insight}</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
