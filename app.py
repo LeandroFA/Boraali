@@ -127,10 +127,10 @@ st.markdown("<p class='subtitle'>Insights estratégicos para o viajante brasilei
 # =========================================
 # CARDS DE BOAS-VINDAS
 # =========================================
-st.markdown("<div class='card-lavanda'>", unsafe_allow_html=True)
+
 st.write("💜 **Bem-vindo ao novo painel Bora Alí!** Explore previsões, históricos, rankings e inteligência de viagem.")
 st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<div class='card-laranja'>", unsafe_allow_html=True)
+
 st.write("👈 Use o menu à esquerda para navegar pelas análises.")
 st.markdown("</div>", unsafe_allow_html=True)
