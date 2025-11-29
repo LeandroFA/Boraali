@@ -1,23 +1,23 @@
 import streamlit as st
 
-# ==========================
+# =========================================
 # CONFIGURAÇÃO DO APP
-# ==========================
+# =========================================
 st.set_page_config(
     page_title="Bora Alí – Dashboard",
     page_icon="✌️",
     layout="wide"
 )
 
-# ==========================
-# CSS PARA ESTILO AQUARELA E REMOVER MENU NATIVO
-# ==========================
+# =========================================
+# CSS - FUNDO AQUARELA + REMOVER MENU NATIVO
+# =========================================
 st.markdown("""
 <style>
 
-/* Remove o menu padrão de páginas */
-div[data-testid="stSidebarNav"] { 
-    display: none !important; 
+/* Remove o menu interno de páginas do Streamlit */
+div[data-testid="stSidebarNav"] {
+    display: none !important;
 }
 
 /* Fundo aquarela */
@@ -38,7 +38,7 @@ body {
     100% {background-position: 0% 50%;}
 }
 
-/* Títulos */
+/* Estilos do título e subtítulo */
 .big-title {
     font-size: 48px !important;
     font-weight: 800 !important;
@@ -50,30 +50,21 @@ body {
     color: #3C1A66 !important;
 }
 
-/* CARD BONITO */
-.card {
-    background: rgba(255,255,255,0.7);
-    padding: 30px;
-    margin-top: 25px;
-    border-radius: 20px;
-    border: 2px solid rgba(0,0,0,0.05);
-    backdrop-filter: blur(8px);
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 
-# ==========================
-# CABEÇALHO
-# ==========================
+# =========================================
+# CABEÇALHO PRINCIPAL
+# =========================================
 st.markdown("<h1 class='big-title'>🎨 Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Dashboard nacional com previsões, históricos e insights do viajante brasileiro.</p>", unsafe_allow_html=True)
 
 
-# ==========================
-# MENU LATERAL CUSTOMIZADO
-# ==========================
+
+# =========================================
+# MENU LATERAL PERSONALIZADO
+# =========================================
 st.sidebar.title("✌️ Navegação Bora Alí")
 
 opcao = st.sidebar.radio(
@@ -87,8 +78,8 @@ opcao = st.sidebar.radio(
     ]
 )
 
-# MAPA PARA NAVEGAÇÃO REAL ENTRE PÁGINAS
-paginas = {
+# Mapeamento de páginas /pages
+mapa_paginas = {
     "📍 Histórico por Rota": "historico_por_rota",
     "🏆 Ranking por Estação": "ranking_por_estacao",
     "📈 Previsão 2026": "previsao_2026",
@@ -96,10 +87,10 @@ paginas = {
     "🎯 Radar de Oportunidades": "radar_de_oportunidades"
 }
 
-# ==========================
-# SWITCH DE PÁGINA
-# ==========================
-from streamlit_extras.switch_page_button import switch_page
+# =========================================
+# REDIRECIONAMENTO SEM PACOTES EXTERNOS
+# =========================================
+# Isso altera a URL e carrega a página correta — solução oficial do Streamlit
+st.experimental_set_query_params(page=mapa_paginas[opcao])
 
-switch_page(paginas[opcao])
-
+st.write("👈 Use o menu à esquerda para navegar.")
