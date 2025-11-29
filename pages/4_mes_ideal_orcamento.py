@@ -14,7 +14,7 @@ st.set_page_config(
 
 # ===========================
 # ESTILO BORA ALÍ
-# ===========================
+# =========================== 
 st.markdown("""
 <style>
 :root {
@@ -52,18 +52,18 @@ meses_nome = {
 }
 
 # ===========================
-# FILTROS
+# FILTROS (ORDEM NOVA)
 # ===========================
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
+    orcamento = st.number_input("Seu orçamento máximo (R$):", min_value=100.0, step=50.0)
 
 with col2:
-    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
+    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
 
 with col3:
-    orcamento = st.number_input("Seu orçamento máximo (R$):", min_value=100.0, step=50.0)
+    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino) & (df["ANO"].isin([2023, 2024, 2025]))]
 
@@ -91,7 +91,6 @@ if not df_baratos.empty:
     melhor = df_baratos.sort_values("TARIFA").iloc[0]
     msg_melhor = f"🌟 O melhor mês dentro do orçamento é <b>{melhor['MES_NOME']}</b> — R$ {melhor['TARIFA']:.2f}"
 else:
-    # Nenhum mês cabe no orçamento → pega o mais próximo
     mais_proximo = df_mes.iloc[(df_mes["TARIFA"] - orcamento).abs().argmin()]
     msg_melhor = (
         "⚠️ Nenhum mês cabe no orçamento.<br>"
@@ -140,10 +139,8 @@ insights = f"""
 • O mês mais barato historicamente é <b>{mais_barato['MES_NOME']}</b> — R$ {mais_barato['TARIFA']:.2f}.<br>
 • O mês mais caro é <b>{mais_caro['MES_NOME']}</b> — R$ {mais_caro['TARIFA']:.2f}.<br>
 • A diferença entre eles é de <b>{(mais_caro['TARIFA'] - mais_barato['TARIFA']):.2f}</b> reais.<br>
-• O orçamento informado permite identificar rapidamente o mês de melhor custo-benefício.
+• Com seu orçamento, é possível identificar o mês de melhor custo-benefício rapidamente.
 </div>
 """
 
 st.markdown(insights, unsafe_allow_html=True)
-
-
