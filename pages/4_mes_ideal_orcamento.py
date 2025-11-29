@@ -128,16 +128,6 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # ===========================
-# TABELA COMPLETA
-# ===========================
-st.markdown("### 📋 Tabela Completa das Tarifas Mensais")
-
-df_tab = df_mes[["MES_NOME", "TARIFA"]].copy()
-df_tab.columns = ["Mês", "Tarifa Média (R$)"]
-
-st.dataframe(df_tab.style.format({"Tarifa Média (R$)": "R$ {:.2f}".format}), height=350)
-
-# ===========================
 # INSIGHTS AUTOMÁTICOS
 # ===========================
 st.markdown("### 🧠 Insights")
@@ -155,4 +145,5 @@ insights = f"""
 """
 
 st.markdown(insights, unsafe_allow_html=True)
+
 
