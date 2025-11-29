@@ -36,7 +36,7 @@ body { background-color: var(--cinza); }
 # TÍTULO
 # ===========================
 st.markdown("<div class='big-title'>🍃 Ranking por Estação</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Selecione a estação para ver os destinos mais vantajosos e os que deve evitar</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Veja os destinos com melhor custo-benefício na estação selecionada</div>", unsafe_allow_html=True)
 
 # ===========================
 # CARREGAR DADOS
@@ -44,16 +44,6 @@ st.markdown("<div class='subtitle'>Selecione a estação para ver os destinos ma
 df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
-
-# ===========================
-# MAPEAMENTO DE MESES (usado para validar)
-# ===========================
-meses_map = {
-    1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril",
-    5: "Maio", 6: "Junho", 7: "Julho", 8: "Agosto",
-    9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
-}
-df["MES_NOME"] = df["MES"].map(meses_map)
 
 # ===========================
 # ESTAÇÕES
@@ -81,7 +71,6 @@ with col3:
     anos_disponiveis = sorted(df["ANO"].unique().tolist())
     anos_sel = st.multiselect("Anos (filtrar):", anos_disponiveis, default=anos_disponiveis)
 
-# validador simples
 if len(anos_sel) == 0:
     st.error("Selecione ao menos 1 ano para continuar.")
     st.stop()
@@ -100,16 +89,13 @@ if df_filtered.empty:
     st.stop()
 
 # ===========================
-# AGREGAR POR DESTINO (média da tarifa na estação)
+# AGREGAR POR DESTINO
 # ===========================
 agg = (
     df_filtered.groupby("DESTINO", as_index=False)["TARIFA"]
     .mean()
     .rename(columns={"TARIFA": "TARIFA_MEDIA_ESTACAO"})
-)
-
-# ordenar
-agg = agg.sort_values("TARIFA_MEDIA_ESTACAO", ascending=True).reset_index(drop=True)
+).sort_values("TARIFA_MEDIA_ESTACAO", ascending=True)
 
 # ===========================
 # TOP 5 + TOP 3 A EVITAR
@@ -118,15 +104,16 @@ top5 = agg.head(5).copy()
 evitar3 = agg.tail(3).sort_values("TARIFA_MEDIA_ESTACAO", ascending=False).copy()
 
 # ===========================
-# GRÁFICOS (cores Bora Alí)
+# CORES BORA ALÍ
 # ===========================
 cores = {
     "top": "#62D99C",      # verde
-    "mid": "#FF9F68",      # laranja
     "bad": "#9B6DFF"       # roxo
 }
 
-# figura top5
+# ===========================
+# GRÁFICO TOP 5
+# ===========================
 fig_top5 = px.bar(
     top5,
     x="TARIFA_MEDIA_ESTACAO",
@@ -137,58 +124,56 @@ fig_top5 = px.bar(
     color_discrete_sequence=[cores["top"]]
 )
 fig_top5.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
-fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30), xaxis_title="Tarifa média (R$)")
+fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30))
 
-# figura evitar
+# ===========================
+# GRÁFICO TOP 3 PARA EVITAR
+# ===========================
 fig_evitar = px.bar(
     evitar3,
     x="TARIFA_MEDIA_ESTACAO",
     y="DESTINO",
     orientation="h",
     text="TARIFA_MEDIA_ESTACAO",
-    labels={"TARIFA_MEDIA_ESTACAO": "Tarifa média (R$)", "DESTINO": "Destino"},
     color_discrete_sequence=[cores["bad"]]
 )
 fig_evitar.update_traces(texttemplate="R$ %{x:.2f}", textposition="outside")
-fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30), xaxis_title="Tarifa média (R$)")
+fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30))
 
 # ===========================
-# LAYOUT DE EXIBIÇÃO
+# LAYOUT
 # ===========================
-st.markdown("## 🌟 Ranking da Estação")
-st.markdown(f"**Estação:** {estacao_sel} — **Período filtrado:** {', '.join(map(str, sorted(anos_sel)))} — **Origem:** {origem_sel}")
+st.markdown(f"### 📊 Resultados — Estação: **{estacao_sel}** ")
 
 left, right = st.columns([2,1])
 
 with left:
-    st.markdown("### 🟢 Top 5 destinos mais baratos (média da estação)")
+    st.markdown("### 🟢 Top 5 destinos mais baratos")
     st.plotly_chart(fig_top5, use_container_width=True)
 
-    st.markdown("### ⚠️ Destinos que deve evitar (Top 3 mais caros)")
+    st.markdown("### 🔴 3 destinos mais caros (evite)")
     st.plotly_chart(fig_evitar, use_container_width=True)
 
 with right:
-    st.markdown("### 📋 Tabela completa (ordenada)")
-    st.dataframe(agg.style.format({"TARIFA_MEDIA_ESTACAO":"R$ {:,.2f}".format}), height=420)
-
-    # Insights rápidos
     st.markdown("### 🧠 Insights rápidos")
-    if not agg.empty:
-        melhor = top5.iloc[0]
-        mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
-        pct_gap = ( (mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana ) * 100 if mediana != 0 else np.nan
-        st.markdown(f"<div class='card'><b>Melhor destino:</b> {melhor['DESTINO']} — <b>R$ {melhor['TARIFA_MEDIA_ESTACAO']:.2f}</b><br>"
-                    f"<b>Mediana da estação:</b> R$ {mediana:,.2f}<br>"
-                    f"<b>Diferença entre melhor e mediana:</b> {pct_gap:.1f}%</div>", unsafe_allow_html=True)
 
-# ===========================
-# DICAS E CONTEXTO
-# ===========================
-st.markdown("### 💬 Contexto e recomendações")
-st.markdown(
-    "- Os valores são médias da tarifa para a estação selecionada (mês agrupados).<br>"
-    "- Filtre por origem se quiser análise específica para quem sai de uma cidade.<br>"
-    "- Use os top 5 para planejar destinos com melhor custo-benefício e evite os 3 com maior tarifa média.",
-    unsafe_allow_html=True
-)
+    melhor = top5.iloc[0]
+    mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
+    pct_gap = ((mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana) * 100 if mediana != 0 else np.nan
 
+    st.markdown(f"""
+    <div class='card'>
+        <b>Melhor destino:</b> {melhor['DESTINO']}<br>
+        <b>Tarifa média:</b> R$ {melhor['TARIFA_MEDIA_ESTACAO']:.2f}<br><br>
+        <b>Mediana da estação:</b> R$ {mediana:.2f}<br>
+        <b>Vantagem vs mediana:</b> {pct_gap:.1f}% mais barato
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 💬 Recomendações")
+    st.markdown(
+        "- O top 5 representa o melhor custo-benefício médio na estação.<br>"
+        "- Os destinos do bloco vermelho sofrem forte variação ou são alta demanda.<br>"
+        "- Use para identificar oportunidades sazonais claras.",
+        unsafe_allow_html=True
+    )
