@@ -69,7 +69,7 @@ body {
 # =========================================
 # CABEÇALHO
 # =========================================
-st.markdown("<h1 class='big-title'>🎨 Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='big-title'>✌️Bora Alí – Painel Inteligente</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Dashboard nacional com previsões, históricos e insights do viajante brasileiro.</p>", unsafe_allow_html=True)
 
 # =========================================
