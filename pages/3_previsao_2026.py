@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit as st
 
 # === REMOVER MENU NATIVO ===
 st.markdown("""
@@ -78,10 +77,17 @@ meses = {
 col1, col2 = st.columns(2)
 
 with col1:
-    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
+    origens = sorted(df["ORIGEM"].unique())
+    origem = st.selectbox("Origem:", ["Selecione a origem"] + origens)
 
 with col2:
-    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
+    destinos = sorted(df["DESTINO"].unique())
+    destino = st.selectbox("Destino:", ["Selecione o destino"] + destinos)
+
+# bloquear execução até selecionar tudo
+if origem == "Selecione a origem" or destino == "Selecione o destino":
+    st.warning("Por favor, selecione a origem e o destino para gerar a previsão de 2026.")
+    st.stop()
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino) & (df["ANO"].isin([2023, 2024, 2025]))]
 
@@ -101,9 +107,9 @@ df_grouped = (
 df_grouped["MES_NOME"] = df_grouped["MES"].map(meses)
 
 # ===========================
-# APLICAR PREVISÃO (1,1% NÃO CUMULATIVO)
+# PREVISÃO: ADICIONAR +1% PARA 2026
 # ===========================
-df_grouped["PREVISAO_2026"] = (df_grouped["TARIFA"] * 1.011).round(2)
+df_grouped["PREVISAO_2026"] = (df_grouped["TARIFA"] * 1.01).round(2)
 
 # ===========================
 # MELHOR MÊS DE 2026
@@ -113,7 +119,7 @@ melhor_mes_nome = melhor_mes["MES_NOME"]
 melhor_valor = melhor_mes["PREVISAO_2026"]
 
 # ===========================
-# MÉTRICA: MELHOR MÊS
+# CARD
 # ===========================
 st.markdown(f"""
 <div class='card'>
@@ -124,7 +130,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ===========================
-# GRÁFICO DE PREVISÃO
+# GRÁFICO
 # ===========================
 st.markdown("### 📈 Previsão Mensal da Tarifa — 2026")
 
@@ -148,7 +154,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # ===========================
-# TABELA DE PREVISÃO
+# TABELA
 # ===========================
 st.markdown("### 📋 Tabela Completa da Previsão 2026")
 
@@ -166,20 +172,16 @@ st.markdown("### 🧠 Insights Automáticos")
 
 insights = ""
 
-# tendência
 if df_grouped["PREVISAO_2026"].iloc[-1] < df_grouped["PREVISAO_2026"].iloc[0]:
     insights += "• A previsão sugere tendência de **queda** ao longo do ano.<br>"
 else:
     insights += "• A previsão sugere tendência de **alta** ao longo do ano.<br>"
 
-# melhor vs pior mês
 pior_mes = df_grouped.loc[df_grouped["PREVISAO_2026"].idxmax()]
 insights += f"• Melhor mês: <b>{melhor_mes_nome}</b> — R$ {melhor_valor:.2f}.<br>"
 insights += f"• Mês mais caro previsto: <b>{pior_mes['MES_NOME']}</b> — R$ {pior_mes['PREVISAO_2026']:.2f}.<br>"
 
-# variação
 variacao = ((pior_mes["PREVISAO_2026"] - melhor_valor) / melhor_valor) * 100
 insights += f"• Diferença entre melhor e pior mês: <b>{variacao:.1f}%</b>."
 
 st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
-
