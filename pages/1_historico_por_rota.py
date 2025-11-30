@@ -19,6 +19,7 @@ st.sidebar.page_link("pages/2_ranking_por_estacao.py", label="🏆 Ranking por E
 st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
 st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
+st.sidebar.page_link("pages/6_analise_companhias.py", label="✈️ Análise das Companhias")
 
 # ===========================
 # CONFIG GERAL
