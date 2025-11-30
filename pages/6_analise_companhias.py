@@ -22,18 +22,17 @@ st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x 
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
 st.sidebar.page_link("pages/6_analise_companhias.py", label="✈️ Análise das Companhias")
 
-
-# ===========================
-# CONFIGURAÇÃO
-# ===========================
+# ==========================================
+# CONFIGURAÇÃO DE TELA
+# ==========================================
 st.set_page_config(
-    page_title="Análise das Companhias — Bora Alí",
+    page_title="Análise das Companhias Aéreas — Bora Alí",
     layout="wide"
 )
 
-# ===========================
+# ==========================================
 # ESTILO BORA ALÍ
-# ===========================
+# ==========================================
 st.markdown("""
 <style>
 :root {
@@ -43,150 +42,134 @@ st.markdown("""
     --cinza: #F5F4FA;
 }
 body { background-color: var(--cinza); }
-.big-title { font-size: 40px !important; font-weight: 900; color: var(--roxo); margin-bottom: -6px; }
-.subtitle { font-size: 17px !important; color: #444; margin-bottom: 18px; }
-.card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.metric { font-size: 32px; font-weight: 900; color: var(--roxo); }
-.small { font-size: 13px; color:#666; }
+.big-title { font-size: 40px; font-weight: 900; color: var(--roxo); }
+.subtitle { font-size: 18px; color: #444; margin-bottom: 18px; }
+.card { background: white; padding: 20px; border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.07); margin-bottom: 15px; }
+.metric { font-size: 32px; font-weight: 800; color: var(--roxo); }
 </style>
 """, unsafe_allow_html=True)
 
-# ===========================
-# TÍTULO
-# ===========================
-st.markdown("<div class='big-title'>✈️ Análise Global das Companhias Aéreas</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Comparação de preço, estabilidade e desempenho por estação do ano</div>", unsafe_allow_html=True)
+# ==========================================
+# TITULO
+# ==========================================
+st.markdown("<div class='big-title'>✈️ Análise das Companhias Aéreas</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Comparação entre LATAM, GOL e AZUL usando a média histórica 2023–2025</div>", unsafe_allow_html=True)
 
-# ===========================
-# CARREGAR DADOS
-# ===========================
+# ==========================================
+# CARREGAR DATASET
+# ==========================================
 df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
 
-# ===========================
-# ESTAÇÕES
-# ===========================
-estacoes = {
-    "Ano inteiro": list(range(1, 13)),
-    "Verão": [12, 1, 2],
-    "Outono": [3, 4, 5],
-    "Inverno": [6, 7, 8],
-    "Primavera": [9, 10, 11]
+meses_nome = {
+    1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',
+    7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'
 }
 
-# ===========================
-# FILTRO
-# ===========================
-estacao_sel = st.selectbox(
-    "Selecione a estação do ano:",
-    list(estacoes.keys()),
-    index=0
+# Filtrar somente as 3 companhias
+df = df[df["COMPANHIA"].isin(["LATAM", "GOL", "AZUL"])]
+
+# ==========================================
+# AGRUPAMENTO
+# ==========================================
+df_group = (
+    df.groupby(["COMPANHIA", "MES"])["TARIFA"]
+      .mean()
+      .reset_index()
 )
+df_group["MES_NOME"] = df_group["MES"].map(meses_nome)
 
-df_filtro = df[df["MES"].isin(estacoes[estacao_sel])]
+# ==========================================
+# CALCULAR MÉTRICAS
+# ==========================================
+metrics = df_group.groupby("COMPANHIA")["TARIFA"].agg(["mean", "std", "min", "max"])
 
-# ===========================
-# AGRUPAÇÃO POR COMPANHIA
-# ===========================
-agg = df_filtro.groupby("COMPANHIA")["TARIFA"].agg(
-    preco_medio="mean",
-    preco_min="min",
-    preco_max="max",
-    variacao=lambda x: x.max() - x.min(),
-    estabilidade=lambda x: x.std()
-).reset_index()
+# volatilidade percentual
+metrics["volatilidade_%"] = (metrics["max"] - metrics["min"]) / metrics["mean"] * 100
 
-# ===========================
-# DEFINIR TOPS
-# ===========================
-mais_barata = agg.loc[agg["preco_medio"].idxmin()]
-mais_cara = agg.loc[agg["preco_medio"].idxmax()]
-mais_estavel = agg.loc[agg["estabilidade"].idxmin()]
-mais_oscilante = agg.loc[agg["variacao"].idxmax()]
+# estabilidade (0 a 100)
+metrics["estabilidade"] = 100 - (metrics["std"] / metrics["mean"] * 100)
 
-# ===========================
-# CARDS
-# ===========================
-col1, col2 = st.columns(2)
-col3, col4 = st.columns(2)
+# transformar em dicionário fácil
+m = metrics.round(2)
+
+# ==========================================
+# CARDS PRINCIPAIS
+# ==========================================
+col1, col2, col3 = st.columns(3)
 
 with col1:
+    mais_barata = m["mean"].idxmin()
     st.markdown(f"""
     <div class='card'>
-        <b>💸 Companhia mais barata:</b><br>
-        <span class='metric'>{mais_barata['COMPANHIA']}</span><br>
-        Média: R$ {mais_barata['preco_medio']:.2f}
+        <b>💰 Companhia Mais Barata</b><br>
+        <span class='metric'>{mais_barata}</span><br>
+        Média: R$ {m.loc[mais_barata, 'mean']:.2f}
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
+    mais_estavel = m["estabilidade"].idxmax()
     st.markdown(f"""
     <div class='card'>
-        <b>🔥 Companhia mais cara:</b><br>
-        <span class='metric'>{mais_cara['COMPANHIA']}</span><br>
-        Média: R$ {mais_cara['preco_medio']:.2f}
+        <b>📉 Companhia Mais Estável</b><br>
+        <span class='metric'>{mais_estavel}</span><br>
+        Estabilidade: {m.loc[mais_estavel, 'estabilidade']:.1f}/100
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
+    maior_vol = m["volatilidade_%"].idxmax()
     st.markdown(f"""
     <div class='card'>
-        <b>🎯 Mais estável (menor variação):</b><br>
-        <span class='metric'>{mais_estavel['COMPANHIA']}</span><br>
-        Desvio: {mais_estavel['estabilidade']:.2f}
+        <b>⚠️ Maior Oscilação</b><br>
+        <span class='metric'>{maior_vol}</span><br>
+        Variação: {m.loc[maior_vol, 'volatilidade_%']:.1f}%
     </div>
     """, unsafe_allow_html=True)
 
-with col4:
-    st.markdown(f"""
-    <div class='card'>
-        <b>⚡ Maior oscilação de preços:</b><br>
-        <span class='metric'>{mais_oscilante['COMPANHIA']}</span><br>
-        Diferença: R$ {mais_oscilante['variacao']:.2f}
-    </div>
-    """, unsafe_allow_html=True)
+# ==========================================
+# GRÁFICO PRINCIPAL — LINHA
+# ==========================================
+st.markdown("### 📈 Evolução das Tarifas por Companhia (2023–2025)")
 
-# ===========================
-# GRÁFICO DE OSCILAÇÃO
-# ===========================
-st.markdown("### 📉 Volatilidade das Tarifas por Companhia")
-
-fig = px.bar(
-    agg,
-    x="COMPANHIA",
-    y="variacao",
-    text="variacao",
-    color="variacao",
-    color_continuous_scale=["#62D99C", "#FF9F68"],
+fig = px.line(
+    df_group,
+    x="MES_NOME",
+    y="TARIFA",
+    color="COMPANHIA",
+    markers=True,
+    line_shape="spline",
+    color_discrete_map={
+        "LATAM": "#9B6DFF",
+        "GOL": "#FF9F68",
+        "AZUL": "#62D99C"
+    }
 )
 
-fig.update_traces(texttemplate="R$ %{y:.2f}", textposition="outside")
-fig.update_layout(height=420, yaxis_title="Oscilação (R$)", coloraxis_showscale=False)
+fig.update_layout(
+    height=480,
+    xaxis_title="Mês",
+    yaxis_title="Tarifa Média (R$)",
+    plot_bgcolor="#F5F4FA",
+    paper_bgcolor="#F5F4FA"
+)
 
 st.plotly_chart(fig, use_container_width=True)
 
-# ===========================
-# RANKING DE ESTABILIDADE
-# ===========================
-st.markdown("### 🏆 Ranking de Estabilidade (Menor → Maior)")
-
-ranking = agg.sort_values("estabilidade")[["COMPANHIA", "estabilidade"]]
-st.dataframe(ranking.style.format({"estabilidade": "{:.2f}"}))
-
-# ===========================
+# ==========================================
 # INSIGHTS
-# ===========================
+# ==========================================
 st.markdown("### 🧠 Insights Automáticos")
 
-insight = f"""
-<div class='card'>
-• Para a estação <b>{estacao_sel}</b>, a companhia mais econômica é <b>{mais_barata['COMPANHIA']}</b>.<br>
-• A companhia mais estável é <b>{mais_estavel['COMPANHIA']}</b>, ideal para quem prefere previsibilidade.<br>
-• <b>{mais_oscilante['COMPANHIA']}</b> apresenta a maior oscilação, indicando forte variação de demanda.<br>
-• A comparação por estação mostra diferenças claras no comportamento das companhias.
-</div>
-"""
+ins = "<div class='card'>"
 
-st.markdown(insight, unsafe_allow_html=True)
+ins += f"• A companhia mais barata em média é <b>{mais_barata}</b>.<br>"
+ins += f"• A mais estável (perfeita para quem quer previsibilidade) é <b>{mais_estavel}</b>.<br>"
+ins += f"• A que mais oscila no ano é <b>{maior_vol}</b> com {m.loc[maior_vol, 'volatilidade_%']:.1f}% de variação.<br>"
 
+ins += "</div>"
+
+st.markdown(ins, unsafe_allow_html=True)
