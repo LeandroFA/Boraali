@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-import streamlit as st
 
 # === REMOVER MENU NATIVO ===
 st.markdown("""
@@ -12,16 +11,14 @@ div[data-testid="stSidebarNav"] {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
-# === MENU CUSTOMIZADO (FUNCIONA EM TODAS AS PÁGINAS) ===
+# === MENU CUSTOMIZADO ===
 st.sidebar.title("✌️ Bora Alí – Navegação")
-
 st.sidebar.page_link("app.py", label="🏠 Início")
 st.sidebar.page_link("pages/1_historico_por_rota.py", label="📍 Histórico por Rota")
 st.sidebar.page_link("pages/2_ranking_por_estacao.py", label="🏆 Ranking por Estação")
 st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
 st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
-
 
 # ===========================
 # CONFIGURAÇÃO
@@ -32,7 +29,7 @@ st.set_page_config(
 )
 
 # ===========================
-# ESTILO BORA ALÍ
+# ESTILO
 # ===========================
 st.markdown("""
 <style>
@@ -47,7 +44,6 @@ body { background-color: var(--cinza); }
 .subtitle { font-size: 17px !important; color: #444; margin-bottom: 20px; }
 .card { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 14px; }
 .metric-value { font-size: 32px; font-weight: 900; color: var(--roxo); }
-.small { font-size: 13px; color:#666; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,7 +54,7 @@ st.markdown("<div class='big-title'>💸 Melhor Mês Pelo Seu Orçamento</div>",
 st.markdown("<div class='subtitle'>Veja todos os meses que cabem no seu bolso — e o melhor entre eles</div>", unsafe_allow_html=True)
 
 # ===========================
-# CARREGAR DADOS
+# CARREGAR DATA
 # ===========================
 df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 df["ANO"] = df["ANO"].astype(int)
@@ -71,7 +67,7 @@ meses_nome = {
 }
 
 # ===========================
-# FILTROS (ORDEM NOVA)
+# FILTROS — NOVA ORDEM + PLACEHOLDERS
 # ===========================
 col1, col2, col3 = st.columns(3)
 
@@ -79,19 +75,31 @@ with col1:
     orcamento = st.number_input("Seu orçamento máximo (R$):", min_value=100.0, step=50.0)
 
 with col2:
-    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
+    origens = sorted(df["ORIGEM"].unique())
+    origem = st.selectbox("Origem:", ["Selecione a origem"] + origens)
 
 with col3:
-    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
+    destinos = sorted(df["DESTINO"].unique())
+    destino = st.selectbox("Destino:", ["Selecione o destino"] + destinos)
 
-df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino) & (df["ANO"].isin([2023, 2024, 2025]))]
+# Bloquear execução até escolher tudo
+if origem == "Selecione a origem" or destino == "Selecione o destino":
+    st.warning("Por favor, selecione a origem e o destino para continuar.")
+    st.stop()
+
+# ===========================
+# FILTRAR DATAFRAME
+# ===========================
+df_filtro = df[(df["ORIGEM"] == origem) & 
+               (df["DESTINO"] == destino) & 
+               (df["ANO"].isin([2023, 2024, 2025]))]
 
 if df_filtro.empty:
     st.warning("⚠️ Não há dados suficientes dessa rota para calcular.")
     st.stop()
 
 # ===========================
-# CÁLCULO DA MÉDIA HISTÓRICA
+# MÉDIA HISTÓRICA POR MÊS
 # ===========================
 df_mes = (
     df_filtro.groupby("MES")["TARIFA"]
@@ -108,7 +116,6 @@ df_baratos = df_mes[df_mes["TARIFA"] <= orcamento].sort_values("TARIFA")
 
 if not df_baratos.empty:
 
-    # Melhor mês dentro do orçamento
     melhor = df_baratos.iloc[0]
 
     msg_melhor = (
@@ -116,13 +123,11 @@ if not df_baratos.empty:
         f"R$ {melhor['TARIFA']:.2f}"
     )
 
-    # Montar lista completa dos meses permitidos
     lista_meses = "<br>".join(
         [f"• <b>{row['MES_NOME']}</b> — R$ {row['TARIFA']:.2f}" for _, row in df_baratos.iterrows()]
     )
 
 else:
-    # Nenhum mês cabe → escolher o mais próximo
     mais_proximo = df_mes.iloc[(df_mes["TARIFA"] - orcamento).abs().argmin()]
     msg_melhor = (
         "⚠️ Nenhum mês cabe no orçamento.<br>"
@@ -132,18 +137,15 @@ else:
     lista_meses = "<i>Nenhum mês disponível com esse orçamento.</i>"
 
 # ===========================
-# CARTÃO PRINCIPAL
+# CARD PRINCIPAL
 # ===========================
 st.markdown(f"<div class='card'><span class='metric-value'>{msg_melhor}</span></div>", unsafe_allow_html=True)
 
 # ===========================
-# LISTA COMPLETA DOS MESES QUE CABEM
+# LISTA DE MESES
 # ===========================
 st.markdown("### 🗓️ Meses que cabem no seu orçamento")
-st.markdown(
-    f"<div class='card'>{lista_meses}</div>",
-    unsafe_allow_html=True
-)
+st.markdown(f"<div class='card'>{lista_meses}</div>", unsafe_allow_html=True)
 
 # ===========================
 # GRÁFICO
