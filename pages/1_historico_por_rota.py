@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit as st
 
 # === REMOVER MENU NATIVO ===
 st.markdown("""
@@ -42,9 +41,7 @@ st.markdown("""
     --cinza: #F5F4FA;
 }
 
-body {
-    background-color: var(--cinza);
-}
+body { background-color: var(--cinza); }
 
 .big-title {
     font-size: 42px !important;
@@ -102,21 +99,19 @@ meses = {
 df["MES_NOME"] = df["MES"].map(meses)
 
 # ===========================
-# FILTROS DE ROTA (AGORA COM “SELECIONE”)
+# FILTROS DE ROTA
 # ===========================
 col1, col2 = st.columns(2)
 
 with col1:
-    origens = sorted(df["ORIGEM"].unique())
-    origem = st.selectbox("Origem:", ["Selecione a origem"] + origens)
+    origem = st.selectbox("Selecione a Origem:", ["Selecione"] + sorted(df["ORIGEM"].unique()))
 
 with col2:
-    destinos = sorted(df["DESTINO"].unique())
-    destino = st.selectbox("Destino:", ["Selecione o destino"] + destinos)
+    destino = st.selectbox("Selecione o Destino:", ["Selecione"] + sorted(df["DESTINO"].unique()))
 
-# Impede execução se não escolher origem e destino
-if origem == "Selecione a origem" or destino == "Selecione o destino":
-    st.warning("Por favor, selecione a origem e o destino para visualizar os gráficos.")
+# Validação
+if origem == "Selecione" or destino == "Selecione":
+    st.info("🛫 Escolha a origem e destino para visualizar os dados.")
     st.stop()
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino)]
@@ -129,13 +124,24 @@ if df_filtro.empty:
 # AGRUPAR PARA NÃO TER MESES DUPLICADOS
 # ===========================
 df_grouped = (
-    df_filtro.groupby(["ANO", "MES", "MES_NOME"])["TARIFA"]
-    .mean()
-    .reset_index()
+    df_filtro.groupby(["ANO", "MES", "MES_NOME"], as_index=False)
+    .agg({"TARIFA": "mean", "TEMP_MEDIA": "mean"})
 )
 
 # ===========================
-# CÁLCULO DE MÉTRICAS
+# CÁLCULO TEMPERATURA MÉDIA ROTA
+# ===========================
+temp_media = df_grouped["TEMP_MEDIA"].mean()
+
+if temp_media < 20:
+    clima = "❄️ Frio"
+elif temp_media <= 25:
+    clima = "🌤️ Ameno"
+else:
+    clima = "☀️ Quente"
+
+# ===========================
+# CÁLCULO DE TARIFAS
 # ===========================
 media_geral = df_grouped["TARIFA"].mean()
 
@@ -154,7 +160,7 @@ melhor_valor = (
 # ===========================
 # CARDS
 # ===========================
-colA, colB = st.columns(2)
+colA, colB, colC = st.columns(3)
 
 with colA:
     st.markdown(f"""
@@ -172,13 +178,20 @@ with colB:
     </div>
     """, unsafe_allow_html=True)
 
+with colC:
+    st.markdown(f"""
+    <div class='card'>
+        <b>🌡️ Temperatura média da rota:</b><br>
+        <span class='metric-value'>{temp_media:.1f}°C — {clima}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ===========================
-# GRÁFICO DE LINHA — MESES ORDENADOS
+# GRÁFICO DE LINHA (MESES ORDENADOS)
 # ===========================
 st.markdown("### 📈 Evolução Mensal da Tarifa (por Ano)")
 
-ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-               "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+ordem_meses = list(meses.values())
 
 fig = px.line(
     df_grouped,
@@ -192,18 +205,12 @@ fig = px.line(
 )
 
 fig.update_traces(marker=dict(size=10))
-fig.update_layout(
-    height=440,
-    xaxis_title="Mês",
-    yaxis_title="Tarifa Média (R$)",
-    plot_bgcolor="#F5F4FA",
-    paper_bgcolor="#F5F4FA"
-)
+fig.update_layout(height=440)
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ===========================
-# GRÁFICO ANUAL — SEM 2023.5
+# MÉDIA ANUAL
 # ===========================
 st.markdown("### 📊 Média Anual da Tarifa")
 
@@ -224,17 +231,12 @@ fig2 = px.bar(
     color_discrete_sequence=["#9B6DFF", "#FF9F68", "#62D99C"]
 )
 
-fig2.update_layout(
-    height=400,
-    xaxis_type="category",
-    xaxis_title="Ano",
-    yaxis_title="Tarifa Média (R$)"
-)
+fig2.update_layout(height=400)
 
 st.plotly_chart(fig2, use_container_width=True)
 
 # ===========================
-# INSIGHTS AUTOMÁTICOS
+# INSIGHTS
 # ===========================
 st.markdown("### 🧠 Insights da Rota")
 
@@ -248,6 +250,6 @@ else:
     insights += "• A rota está ficando **mais cara** ao longo dos anos.<br>"
 
 insights += f"• O mês historicamente mais vantajoso é <b>{meses[melhor_mes]}</b>.<br>"
-insights += "• Meses de baixa estação geralmente apresentam tarifas menores."
+insights += f"• A temperatura média da rota é <b>{temp_media:.1f}°C</b> → {clima}.<br>"
 
 st.markdown(f"<div class='card'>{insights}</div>", unsafe_allow_html=True)
