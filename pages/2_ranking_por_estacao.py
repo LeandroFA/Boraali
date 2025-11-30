@@ -22,7 +22,6 @@ st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
 st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
 
-
 # ===========================
 # CONFIGURAÇÃO
 # ===========================
@@ -84,11 +83,16 @@ with col1:
     origem_sel = st.selectbox("Origem (opcional):", origem_choices, index=0)
 
 with col2:
-    estacao_sel = st.selectbox("Estação:", list(estacoes.keys()))
+    estacao_sel = st.selectbox("Estação:", ["Selecione a estação"] + list(estacoes.keys()))
 
 with col3:
     anos_disponiveis = sorted(df["ANO"].unique().tolist())
     anos_sel = st.multiselect("Anos (filtrar):", anos_disponiveis, default=anos_disponiveis)
+
+# Bloqueia a página se estação não for escolhida
+if estacao_sel == "Selecione a estação":
+    st.warning("Selecione a estação para visualizar o ranking.")
+    st.stop()
 
 if len(anos_sel) == 0:
     st.error("Selecione ao menos 1 ano para continuar.")
@@ -113,7 +117,7 @@ if df_filtered.empty:
 agg = (
     df_filtered.groupby("DESTINO", as_index=False)["TARIFA"]
     .mean()
-    .round(0)   # <<<<<<<< ARREDONDAMENTO AQUI
+    .round(0)
     .rename(columns={"TARIFA": "TARIFA_MEDIA_ESTACAO"})
 ).sort_values("TARIFA_MEDIA_ESTACAO", ascending=True)
 
@@ -127,8 +131,8 @@ evitar3 = agg.tail(3).sort_values("TARIFA_MEDIA_ESTACAO", ascending=False)
 # CORES
 # ===========================
 cores = {
-    "top": "#62D99C",      # verde
-    "bad": "#9B6DFF"       # roxo
+    "top": "#62D99C",
+    "bad": "#9B6DFF"
 }
 
 # ===========================
@@ -146,7 +150,7 @@ fig_top5 = px.bar(
     color_discrete_sequence=[cores["top"]]
 )
 
-fig_top5.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")   # <<<<< INTEIRO
+fig_top5.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")
 fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30))
 
 st.plotly_chart(fig_top5, use_container_width=True)
@@ -165,13 +169,13 @@ fig_evitar = px.bar(
     color_discrete_sequence=[cores["bad"]]
 )
 
-fig_evitar.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")   # <<<<< INTEIRO
+fig_evitar.update_traces(texttemplate="R$ %{x:.0f}", textposition="outside")
 fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30))
 
 st.plotly_chart(fig_evitar, use_container_width=True)
 
 # ===========================
-# INSIGHTS (ABAIXO DOS GRÁFICOS)
+# INSIGHTS (ABAIXO)
 # ===========================
 st.markdown("### 🧠 Insights rápidos")
 
