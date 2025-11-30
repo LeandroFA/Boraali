@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-import streamlit as st
 
 # === REMOVER MENU NATIVO ===
 st.markdown("""
@@ -21,6 +20,7 @@ st.sidebar.page_link("pages/2_ranking_por_estacao.py", label="🏆 Ranking por E
 st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
 st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
+
 
 # ===========================
 # CONFIGURAÇÃO
@@ -56,6 +56,7 @@ body { background-color: var(--cinza); }
 st.markdown("<div class='big-title'>🍃 Ranking por Estação</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>Veja os destinos com melhor custo-benefício na estação selecionada</div>", unsafe_allow_html=True)
 
+
 # ===========================
 # CARREGAR DADOS
 # ===========================
@@ -64,7 +65,16 @@ df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
 
 # ===========================
-# ESTAÇÕES
+# ADICIONAR ANO 2026 (+1%)
+# ===========================
+df_2026 = df.copy()
+df_2026["ANO"] = 2026
+df_2026["TARIFA"] = df_2026["TARIFA"] * 1.01   # <<<<< AQUI ENTRA O +1%
+
+df = pd.concat([df, df_2026], ignore_index=True)
+
+# ===========================
+# ESTAÇÕES DO ANO
 # ===========================
 estacoes = {
     "Verão": [12, 1, 2],
@@ -83,16 +93,11 @@ with col1:
     origem_sel = st.selectbox("Origem (opcional):", origem_choices, index=0)
 
 with col2:
-    estacao_sel = st.selectbox("Estação:", ["Selecione a estação"] + list(estacoes.keys()))
+    estacao_sel = st.selectbox("Estação:", list(estacoes.keys()))
 
 with col3:
     anos_disponiveis = sorted(df["ANO"].unique().tolist())
-    anos_sel = st.multiselect("Anos (filtrar):", anos_disponiveis, default=anos_disponiveis)
-
-# Bloqueia a página se estação não for escolhida
-if estacao_sel == "Selecione a estação":
-    st.warning("Selecione a estação para visualizar o ranking.")
-    st.stop()
+    anos_sel = st.multiselect("Anos:", anos_disponiveis, default=[2023, 2024, 2025, 2026])
 
 if len(anos_sel) == 0:
     st.error("Selecione ao menos 1 ano para continuar.")
@@ -117,12 +122,12 @@ if df_filtered.empty:
 agg = (
     df_filtered.groupby("DESTINO", as_index=False)["TARIFA"]
     .mean()
-    .round(0)
+    .round(0)   # Arredonda
     .rename(columns={"TARIFA": "TARIFA_MEDIA_ESTACAO"})
 ).sort_values("TARIFA_MEDIA_ESTACAO", ascending=True)
 
 # ===========================
-# TOP 5 + TOP 3 A EVITAR
+# TOP 5 + TOP 3 EVITAR
 # ===========================
 top5 = agg.head(5)
 evitar3 = agg.tail(3).sort_values("TARIFA_MEDIA_ESTACAO", ascending=False)
@@ -156,7 +161,7 @@ fig_top5.update_layout(height=380, margin=dict(l=120, r=20, t=30, b=30))
 st.plotly_chart(fig_top5, use_container_width=True)
 
 # ===========================
-# GRÁFICO EVITAR 3
+# GRÁFICO 3 DESTINOS A EVITAR
 # ===========================
 st.markdown("### 🔴 3 destinos mais caros (evite)")
 
@@ -175,13 +180,12 @@ fig_evitar.update_layout(height=300, margin=dict(l=120, r=20, t=30, b=30))
 st.plotly_chart(fig_evitar, use_container_width=True)
 
 # ===========================
-# INSIGHTS (ABAIXO)
+# INSIGHTS
 # ===========================
 st.markdown("### 🧠 Insights rápidos")
 
 melhor = top5.iloc[0]
 mediana = agg["TARIFA_MEDIA_ESTACAO"].median()
-
 pct_gap = ((mediana - melhor["TARIFA_MEDIA_ESTACAO"]) / mediana) * 100 if mediana != 0 else np.nan
 
 st.markdown(f"""
@@ -199,7 +203,6 @@ st.markdown(f"""
 st.markdown("### 💬 Recomendações")
 st.markdown(
     "- O Top 5 mostra os destinos com **melhor custo-benefício** na estação.<br>"
-    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>"
-    "- A vantagem percentual mostra o quanto realmente vale a pena mudar o destino.",
+    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>",
     unsafe_allow_html=True
 )
