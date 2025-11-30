@@ -69,8 +69,7 @@ df["MES"] = df["MES"].astype(int)
 # ===========================
 df_2026 = df.copy()
 df_2026["ANO"] = 2026
-df_2026["TARIFA"] = df_2026["TARIFA"] * 1.01   # <<<<< AQUI ENTRA O +1%
-
+df_2026["TARIFA"] = df_2026["TARIFA"] * 1.01   # <<<<< SOMENTE 2026 RECEBE +1%
 df = pd.concat([df, df_2026], ignore_index=True)
 
 # ===========================
@@ -93,11 +92,17 @@ with col1:
     origem_sel = st.selectbox("Origem (opcional):", origem_choices, index=0)
 
 with col2:
-    estacao_sel = st.selectbox("Estação:", list(estacoes.keys()))
+    estacao_opcoes = ["Selecione a estação"] + list(estacoes.keys())
+    estacao_sel = st.selectbox("Estação:", estacao_opcoes)
 
 with col3:
     anos_disponiveis = sorted(df["ANO"].unique().tolist())
     anos_sel = st.multiselect("Anos:", anos_disponiveis, default=[2023, 2024, 2025, 2026])
+
+# Para impedir execução sem escolher estação
+if estacao_sel == "Selecione a estação":
+    st.warning("Por favor, selecione a estação para visualizar o ranking.")
+    st.stop()
 
 if len(anos_sel) == 0:
     st.error("Selecione ao menos 1 ano para continuar.")
@@ -122,7 +127,7 @@ if df_filtered.empty:
 agg = (
     df_filtered.groupby("DESTINO", as_index=False)["TARIFA"]
     .mean()
-    .round(0)   # Arredonda
+    .round(0)
     .rename(columns={"TARIFA": "TARIFA_MEDIA_ESTACAO"})
 ).sort_values("TARIFA_MEDIA_ESTACAO", ascending=True)
 
@@ -203,6 +208,7 @@ st.markdown(f"""
 st.markdown("### 💬 Recomendações")
 st.markdown(
     "- O Top 5 mostra os destinos com **melhor custo-benefício** na estação.<br>"
-    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>",
+    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>"
+    "- O ajuste de +1% em 2026 deixa a previsão mais realista.",
     unsafe_allow_html=True
 )
