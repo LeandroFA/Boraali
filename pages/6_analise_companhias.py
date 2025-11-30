@@ -41,7 +41,6 @@ st.markdown("""
     --verde: #62D99C;
     --cinza: #F5F4FA;
 }
-body { background-color: var(--cinza); }
 .big-title { font-size: 40px; font-weight: 900; color: var(--roxo); }
 .subtitle { font-size: 18px; color: #444; margin-bottom: 18px; }
 .card { background: white; padding: 20px; border-radius: 16px;
@@ -54,25 +53,52 @@ body { background-color: var(--cinza); }
 # TITULO
 # ==========================================
 st.markdown("<div class='big-title'>✈️ Análise das Companhias Aéreas</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Comparação entre LATAM, GOL e AZUL usando a média histórica 2023–2025</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Comparação entre LATAM, GOL e AZUL por estação do ano</div>", unsafe_allow_html=True)
 
 # ==========================================
-# CARREGAR DATASET
+# CARREGAR DATA
 # ==========================================
 df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
 
+# Apenas as três principais
+df = df[df["COMPANHIA"].isin(["LATAM", "GOL", "AZUL"])]
+
+# Nome dos meses
 meses_nome = {
     1:'Janeiro',2:'Fevereiro',3:'Março',4:'Abril',5:'Maio',6:'Junho',
     7:'Julho',8:'Agosto',9:'Setembro',10:'Outubro',11:'Novembro',12:'Dezembro'
 }
 
-# Filtrar somente as 3 companhias
-df = df[df["COMPANHIA"].isin(["LATAM", "GOL", "AZUL"])]
+# Estações
+estacoes = {
+    "Verão": [12, 1, 2],
+    "Outono": [3, 4, 5],
+    "Inverno": [6, 7, 8],
+    "Primavera": [9, 10, 11]
+}
 
 # ==========================================
-# AGRUPAMENTO
+# FILTRO — ESTAÇÃO DO ANO
+# ==========================================
+st.markdown("### ❄️ Escolha a estação do ano para comparar as companhias:")
+estacao = st.selectbox("Estação:", ["Selecione", "Verão", "Outono", "Inverno", "Primavera"])
+
+if estacao == "Selecione":
+    st.info("👈 Selecione uma estação para visualizar os dados.")
+    st.stop()
+
+meses_filtrados = estacoes[estacao]
+
+df = df[df["MES"].isin(meses_filtrados)]
+
+if df.empty:
+    st.warning("⚠️ Não há dados suficientes para esta estação.")
+    st.stop()
+
+# ==========================================
+# AGRUPAMENTO POR COMPANHIA
 # ==========================================
 df_group = (
     df.groupby(["COMPANHIA", "MES"])["TARIFA"]
@@ -82,58 +108,49 @@ df_group = (
 df_group["MES_NOME"] = df_group["MES"].map(meses_nome)
 
 # ==========================================
-# CALCULAR MÉTRICAS
+# MÉTRICAS
 # ==========================================
 metrics = df_group.groupby("COMPANHIA")["TARIFA"].agg(["mean", "std", "min", "max"])
-
-# volatilidade percentual
 metrics["volatilidade_%"] = (metrics["max"] - metrics["min"]) / metrics["mean"] * 100
-
-# estabilidade (0 a 100)
 metrics["estabilidade"] = 100 - (metrics["std"] / metrics["mean"] * 100)
-
-# transformar em dicionário fácil
 m = metrics.round(2)
 
 # ==========================================
-# CARDS PRINCIPAIS
+# CARDS
 # ==========================================
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    mais_barata = m["mean"].idxmin()
+    c = m["mean"].idxmin()
     st.markdown(f"""
     <div class='card'>
         <b>💰 Companhia Mais Barata</b><br>
-        <span class='metric'>{mais_barata}</span><br>
-        Média: R$ {m.loc[mais_barata, 'mean']:.2f}
-    </div>
-    """, unsafe_allow_html=True)
+        <span class='metric'>{c}</span><br>
+        Média: R$ {m.loc[c,'mean']:.2f}
+    </div>""", unsafe_allow_html=True)
 
 with col2:
-    mais_estavel = m["estabilidade"].idxmax()
+    c = m["estabilidade"].idxmax()
     st.markdown(f"""
     <div class='card'>
-        <b>📉 Companhia Mais Estável</b><br>
-        <span class='metric'>{mais_estavel}</span><br>
-        Estabilidade: {m.loc[mais_estavel, 'estabilidade']:.1f}/100
-    </div>
-    """, unsafe_allow_html=True)
+        <b>📉 Mais Estável</b><br>
+        <span class='metric'>{c}</span><br>
+        Estabilidade: {m.loc[c,'estabilidade']:.1f}/100
+    </div>""", unsafe_allow_html=True)
 
 with col3:
-    maior_vol = m["volatilidade_%"].idxmax()
+    c = m["volatilidade_%"].idxmax()
     st.markdown(f"""
     <div class='card'>
         <b>⚠️ Maior Oscilação</b><br>
-        <span class='metric'>{maior_vol}</span><br>
-        Variação: {m.loc[maior_vol, 'volatilidade_%']:.1f}%
-    </div>
-    """, unsafe_allow_html=True)
+        <span class='metric'>{c}</span><br>
+        Variação: {m.loc[c,'volatilidade_%']:.1f}%
+    </div>""", unsafe_allow_html=True)
 
 # ==========================================
-# GRÁFICO PRINCIPAL — LINHA
+# GRÁFICO
 # ==========================================
-st.markdown("### 📈 Evolução das Tarifas por Companhia (2023–2025)")
+st.markdown(f"### 📈 Evolução das Tarifas — {estacao}")
 
 fig = px.line(
     df_group,
@@ -150,11 +167,10 @@ fig = px.line(
 )
 
 fig.update_layout(
-    height=480,
+    height=460,
     xaxis_title="Mês",
     yaxis_title="Tarifa Média (R$)",
     plot_bgcolor="#F5F4FA",
-    paper_bgcolor="#F5F4FA"
 )
 
 st.plotly_chart(fig, use_container_width=True)
@@ -162,14 +178,18 @@ st.plotly_chart(fig, use_container_width=True)
 # ==========================================
 # INSIGHTS
 # ==========================================
-st.markdown("### 🧠 Insights Automáticos")
+st.markdown("### 🧠 Insights da Estação")
 
-ins = "<div class='card'>"
+comp_cheap = m["mean"].idxmin()
+comp_stable = m["estabilidade"].idxmax()
+comp_vol = m["volatilidade_%"].idxmax()
 
-ins += f"• A companhia mais barata em média é <b>{mais_barata}</b>.<br>"
-ins += f"• A mais estável (perfeita para quem quer previsibilidade) é <b>{mais_estavel}</b>.<br>"
-ins += f"• A que mais oscila no ano é <b>{maior_vol}</b> com {m.loc[maior_vol, 'volatilidade_%']:.1f}% de variação.<br>"
-
-ins += "</div>"
+ins = f"""
+<div class='card'>
+• Na estação **{estacao}**, a companhia mais barata é <b>{comp_cheap}</b>.<br>
+• A mais estável — ideal para quem evita surpresas — é <b>{comp_stable}</b>.<br>
+• A que mais oscila é <b>{comp_vol}</b>, com variação de {m.loc[comp_vol,'volatilidade_%']:.1f}%.<br>
+</div>
+"""
 
 st.markdown(ins, unsafe_allow_html=True)
