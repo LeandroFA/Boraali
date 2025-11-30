@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -20,8 +19,6 @@ st.sidebar.page_link("pages/2_ranking_por_estacao.py", label="🏆 Ranking por E
 st.sidebar.page_link("pages/3_previsao_2026.py", label="📈 Previsão 2026")
 st.sidebar.page_link("pages/4_mes_ideal_orcamento.py", label="💸 Mês Ideal x Orçamento")
 st.sidebar.page_link("pages/5_radar_de_oportunidades.py", label="🎯 Radar de Oportunidades")
-
-
 
 # ===========================
 # CONFIG GERAL
@@ -78,13 +75,11 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
-
 # ===========================
 # TÍTULO
 # ===========================
 st.markdown("<div class='big-title'>📍 Histórico por Rota</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>Visualize o comportamento da tarifa ao longo dos anos</div>", unsafe_allow_html=True)
-
 
 # ===========================
 # CARREGAR DATA
@@ -93,7 +88,6 @@ df = pd.read_csv("data/INMET_ANAC_EXTREMAMENTE_REDUZIDO.csv")
 
 df["ANO"] = df["ANO"].astype(int)
 df["MES"] = df["MES"].astype(int)
-
 
 # ===========================
 # NOMES DOS MESES
@@ -106,24 +100,29 @@ meses = {
 
 df["MES_NOME"] = df["MES"].map(meses)
 
-
 # ===========================
-# FILTROS DE ROTA
+# FILTROS DE ROTA (AGORA COM “SELECIONE”)
 # ===========================
 col1, col2 = st.columns(2)
 
 with col1:
-    origem = st.selectbox("Origem:", sorted(df["ORIGEM"].unique()))
+    origens = sorted(df["ORIGEM"].unique())
+    origem = st.selectbox("Origem:", ["Selecione a origem"] + origens)
 
 with col2:
-    destino = st.selectbox("Destino:", sorted(df["DESTINO"].unique()))
+    destinos = sorted(df["DESTINO"].unique())
+    destino = st.selectbox("Destino:", ["Selecione o destino"] + destinos)
+
+# Impede execução se não escolher origem e destino
+if origem == "Selecione a origem" or destino == "Selecione o destino":
+    st.warning("Por favor, selecione a origem e o destino para visualizar os gráficos.")
+    st.stop()
 
 df_filtro = df[(df["ORIGEM"] == origem) & (df["DESTINO"] == destino)]
 
 if df_filtro.empty:
     st.warning("⚠️ Não há dados para essa rota.")
     st.stop()
-
 
 # ===========================
 # AGRUPAR PARA NÃO TER MESES DUPLICADOS
@@ -133,7 +132,6 @@ df_grouped = (
     .mean()
     .reset_index()
 )
-
 
 # ===========================
 # CÁLCULO DE MÉTRICAS
@@ -151,7 +149,6 @@ melhor_valor = (
     .mean()
     .min()
 )
-
 
 # ===========================
 # CARDS
@@ -173,7 +170,6 @@ with colB:
         <span class='metric-value'>{meses[melhor_mes]} — R$ {melhor_valor:,.2f}</span>
     </div>
     """, unsafe_allow_html=True)
-
 
 # ===========================
 # GRÁFICO DE LINHA — MESES ORDENADOS
@@ -205,7 +201,6 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
-
 # ===========================
 # GRÁFICO ANUAL — SEM 2023.5
 # ===========================
@@ -217,7 +212,7 @@ df_ano = (
     .reset_index()
 )
 
-df_ano["ANO"] = df_ano["ANO"].astype(str)   # 👈 Remove o problema 2023.5
+df_ano["ANO"] = df_ano["ANO"].astype(str)
 
 fig2 = px.bar(
     df_ano,
@@ -236,7 +231,6 @@ fig2.update_layout(
 )
 
 st.plotly_chart(fig2, use_container_width=True)
-
 
 # ===========================
 # INSIGHTS AUTOMÁTICOS
