@@ -208,7 +208,6 @@ st.markdown(f"""
 st.markdown("### 💬 Recomendações")
 st.markdown(
     "- O Top 5 mostra os destinos com **melhor custo-benefício** na estação.<br>"
-    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>"
-    "- O ajuste de +1% em 2026 deixa a previsão mais realista.",
+    "- Os destinos mais caros devem ser evitados devido à alta demanda sazonal.<br>",
     unsafe_allow_html=True
 )
