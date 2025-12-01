@@ -11,7 +11,7 @@ div[data-testid="stSidebarNav"] {display: none !important;}
 """, unsafe_allow_html=True)
 
 # === MENU CUSTOMIZADO (FUNCIONA EM TODAS AS PÁGINAS) ===
-st.sidebar.title("✌️ Bora Alí")
+st.sidebar.title("✌️ Bora Alí ")
 
 st.sidebar.page_link("app.py", label="🏠 Início")
 st.sidebar.page_link("pages/1_historico_por_rota.py", label="📍 Histórico por Rota")
